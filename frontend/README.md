@@ -1,16 +1,70 @@
-# React + Vite
+# CurrenSee ExpenseHub
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CurrenSee ExpenseHub is a small full-stack expense tracking application that allows users to record expenses in different currencies and view them converted into a selected home currency.
+## Lore to the name "CurrenSee ExpenseHub"
 
-Currently, two official plugins are available:
+I named the application **CurrenSee ExpenseHub** by combining "Currency" and "See". The idea is to make expenses across different currencies easier to see, understand, and track in one place. "ExpenseHub" represents the central space where expenses can be recorded, converted, and viewed together in a chosen home currency.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+The application calculates a running total of all expenses in the selected home currency.
 
-## React Compiler
+## Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- Add expenses with a title, amount, and currency
+- View all recorded expenses
+- Delete expenses
+- Select a home currency
+- Convert expenses into the selected home currency
+- View a running total of converted expenses
+- Loading and error states for currency conversion
+- Backend validation for expense data
+- Same-currency conversion optimization
+- In-memory expense storage
 
-## Expanding the ESLint configuration
+## Tech Stack
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Frontend
+- React
+- Vite
+- Plain CSS
+
+### Backend
+- Node.js
+- Express
+- CORS
+- In-memory storage
+
+### Currency Conversion
+- ExchangeRate-API
+
+The React frontend communicates with the Express backend for currency conversion. The frontend does not call the external exchange-rate API directly.
+
+## Supported Currencies
+
+- NPR
+- USD
+- EUR
+- GBP
+- INR
+
+## Project Structure
+
+```text
+currensee expensehub/
+│
+├── backend/
+│   ├── package.json
+│   ├── package-lock.json
+│   └── server.js
+│
+├── frontend/
+│   ├── package.json
+│   ├── package-lock.json
+│   └── src/
+│       ├── App.jsx
+│       ├── App.css
+│       └── pages/
+│           ├── ExpensePage.jsx
+│           └── SnapshotPage.jsx
+│
+├── .gitignore
+└── README.md
