@@ -10,6 +10,7 @@ function App() {
 
   const [homeCurrency, setHomeCurrency] = useState("NPR");
   const [expenses, setExpenses] = useState([]);
+  const [convertedExpenses, setConvertedExpenses] = useState([]);
 
   const [title, setTitle] = useState("");
   const [amount, setAmount] = useState("");
@@ -18,7 +19,10 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Load expenses from backend when the app starts
+  const [conversionLoading, setConversionLoading] = useState(false);
+  const [conversionError, setConversionError] = useState("");
+
+  // Load expenses from backend
   useEffect(() => {
     fetchExpenses();
   }, []);
@@ -44,7 +48,7 @@ function App() {
     }
   };
 
-  // Add expense through backend
+  // Add expense
   const handleAddExpense = async (e) => {
     e.preventDefault();
 
@@ -74,13 +78,11 @@ function App() {
         throw new Error(data.error || "Failed to add expense.");
       }
 
-      // Add the expense returned by the backend
       setExpenses((previousExpenses) => [
         ...previousExpenses,
         data,
       ]);
 
-      // Clear form
       setTitle("");
       setAmount("");
       setCurrency("NPR");
@@ -90,7 +92,7 @@ function App() {
     }
   };
 
-  // Delete expense through backend
+  // Delete expense
   const handleDelete = async (id) => {
     try {
       setError("");
@@ -105,7 +107,6 @@ function App() {
         throw new Error(data.error || "Failed to delete expense.");
       }
 
-      // Remove deleted expense from UI
       setExpenses((previousExpenses) =>
         previousExpenses.filter((expense) => expense.id !== id)
       );
@@ -115,21 +116,69 @@ function App() {
     }
   };
 
-  const handleGoToHub = () => {
+  // Convert all expenses when going to ExpenseHub
+  const handleGoToHub = async () => {
     if (expenses.length === 0) {
       setError("Please add at least one expense first.");
       return;
     }
 
-    setError("");
-    setPage("snapshot");
+    try {
+      setConversionLoading(true);
+      setConversionError("");
+      setError("");
+
+      const converted = await Promise.all(
+        expenses.map(async (expense) => {
+          // Optimization:
+          // Same currency does not need an API call.
+          if (expense.currency === homeCurrency) {
+            return {
+              ...expense,
+              convertedAmount: expense.amount,
+            };
+          }
+
+          const response = await fetch(
+            `${API_URL}/convert?from=${expense.currency}&to=${homeCurrency}&amount=${expense.amount}`
+          );
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              data.error || `Failed to convert ${expense.title}.`
+            );
+          }
+
+          return {
+            ...expense,
+            convertedAmount: data.convertedAmount,
+          };
+        })
+      );
+
+      setConvertedExpenses(converted);
+      setPage("snapshot");
+    } catch (err) {
+      console.error(err);
+
+      setConversionError(
+        "Some expenses could not be converted. Please try again."
+      );
+    } finally {
+      setConversionLoading(false);
+    }
   };
 
   if (page === "snapshot") {
     return (
       <SnapshotPage
         expenses={expenses}
+        convertedExpenses={convertedExpenses}
         homeCurrency={homeCurrency}
+        conversionLoading={conversionLoading}
+        conversionError={conversionError}
         onBack={() => setPage("expenses")}
       />
     );
