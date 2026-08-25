@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import "./App.css";
-
 import ExpensePage from "./pages/ExpensePage";
 import SnapshotPage from "./pages/SnapshotPage";
 
@@ -16,49 +15,36 @@ function App() {
   const [amount, setAmount] = useState("");
   const [currency, setCurrency] = useState("NPR");
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [convertedExpenses, setConvertedExpenses] = useState([]);
-  const [conversionLoading, setConversionLoading] = useState(false);
-  const [conversionError, setConversionError] = useState("");
-
-  // ------------------------------------
-  // GET /expenses
-  // ------------------------------------
-
+  // Load expenses from backend when the app starts
   useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch(`${API_URL}/expenses`);
-
-        if (!response.ok) {
-          throw new Error("Failed to load expenses.");
-        }
-
-        const data = await response.json();
-
-        setExpenses(data);
-      } catch (error) {
-        console.error(error);
-        setError(
-          "Unable to load expenses. Please check the backend."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchExpenses();
   }, []);
 
-  // ------------------------------------
-  // POST /expenses
-  // ------------------------------------
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
+      const response = await fetch(`${API_URL}/expenses`);
+
+      if (!response.ok) {
+        throw new Error("Failed to load expenses.");
+      }
+
+      const data = await response.json();
+      setExpenses(data);
+    } catch (err) {
+      console.error(err);
+      setError("Could not connect to the expense server.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Add expense through backend
   const handleAddExpense = async (e) => {
     e.preventDefault();
 
@@ -85,145 +71,66 @@ function App() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to add expense."
-        );
+        throw new Error(data.error || "Failed to add expense.");
       }
 
+      // Add the expense returned by the backend
       setExpenses((previousExpenses) => [
         ...previousExpenses,
         data,
       ]);
 
+      // Clear form
       setTitle("");
       setAmount("");
       setCurrency("NPR");
-
-    } catch (error) {
-      console.error(error);
-      setError(error.message);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     }
   };
 
-  // ------------------------------------
-  // DELETE /expenses/:id
-  // ------------------------------------
-
+  // Delete expense through backend
   const handleDelete = async (id) => {
     try {
       setError("");
 
-      const response = await fetch(
-        `${API_URL}/expenses/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`${API_URL}/expenses/${id}`, {
+        method: "DELETE",
+      });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.error || "Failed to delete expense."
-        );
+        throw new Error(data.error || "Failed to delete expense.");
       }
 
+      // Remove deleted expense from UI
       setExpenses((previousExpenses) =>
-        previousExpenses.filter(
-          (expense) => expense.id !== id
-        )
+        previousExpenses.filter((expense) => expense.id !== id)
       );
-
-    } catch (error) {
-      console.error(error);
-      setError(error.message);
+    } catch (err) {
+      console.error(err);
+      setError(err.message);
     }
   };
 
-  // ------------------------------------
-  // Currency conversion
-  // ------------------------------------
-
-  const convertExpenses = async () => {
-    try {
-      setConversionLoading(true);
-      setConversionError("");
-
-      const results = await Promise.all(
-        expenses.map(async (expense) => {
-
-          // Same currency = no API call
-          if (expense.currency === homeCurrency) {
-            return {
-              ...expense,
-              convertedAmount: expense.amount,
-            };
-          }
-
-          const response = await fetch(
-            `${API_URL}/convert?from=${expense.currency}&to=${homeCurrency}&amount=${expense.amount}`
-          );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(
-              data.error || "Currency conversion failed."
-            );
-          }
-
-          return {
-            ...expense,
-            convertedAmount: data.convertedAmount,
-          };
-        })
-      );
-
-      setConvertedExpenses(results);
-      setPage("snapshot");
-
-    } catch (error) {
-      console.error(error);
-
-      setConversionError(
-        "Unable to convert expenses right now. Please try again."
-      );
-
-    } finally {
-      setConversionLoading(false);
-    }
-  };
-
-  // ------------------------------------
-  // Navigation
-  // ------------------------------------
-
-  const handleGoToExpenseHub = () => {
+  const handleGoToHub = () => {
     if (expenses.length === 0) {
-      setError("Add at least one expense first.");
+      setError("Please add at least one expense first.");
       return;
     }
 
     setError("");
-    convertExpenses();
+    setPage("snapshot");
   };
-
-  const handleBack = () => {
-    setPage("expenses");
-  };
-
-  // ------------------------------------
-  // Render pages
-  // ------------------------------------
 
   if (page === "snapshot") {
     return (
       <SnapshotPage
-        convertedExpenses={convertedExpenses}
+        expenses={expenses}
         homeCurrency={homeCurrency}
-        conversionLoading={conversionLoading}
-        conversionError={conversionError}
-        onBack={handleBack}
+        onBack={() => setPage("expenses")}
       />
     );
   }
@@ -243,7 +150,7 @@ function App() {
       error={error}
       onAddExpense={handleAddExpense}
       onDelete={handleDelete}
-      onGoToHub={handleGoToExpenseHub}
+      onGoToHub={handleGoToHub}
     />
   );
 }
