@@ -160,16 +160,17 @@ function App() {
 
       setConvertedExpenses(converted);
       setPage("snapshot");
+    } 
     } catch (err) {
-      console.error(err);
+  console.error(err);
 
-      setConversionError(
-        "Some expenses could not be converted. Please try again."
-      );
-    } finally {
-      setConversionLoading(false);
-    }
-  };
+  setConversionError(
+    "Some expenses could not be converted. Please try again."
+  );
+
+  setConvertedExpenses([]);
+  setPage("snapshot");
+} finally {
 
   if (page === "snapshot") {
     return (
